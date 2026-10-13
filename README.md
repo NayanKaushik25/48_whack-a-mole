@@ -1,4 +1,4 @@
-#PES1UG24CS294
+# PES1UG24CS294
 
 # Whack-a-Mole Game
 
