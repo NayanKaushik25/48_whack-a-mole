@@ -24,9 +24,10 @@ def main():
     while running:
         SCREEN.fill(GRASS_GREEN)
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
             engine.handle_event(event)
+
+            if engine.quit_requested:
+                running = False
 
         engine.handle_input()
         engine.update()
