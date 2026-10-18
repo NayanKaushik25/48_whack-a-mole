@@ -1,6 +1,8 @@
 import pygame
 import random
 from .hole import Hole
+import math
+from array import array
 
 DARK_BROWN = (60, 40, 20)
 MOLE_BROWN = (140, 95, 55)
@@ -49,6 +51,8 @@ class GameEngine:
         )
         self.small_font = pygame.font.SysFont("Arial", 20)
 
+        self._init_sounds()
+        
         # States: playing, game_over, menu
         self.state = "playing"
         self.game_over = False
@@ -131,9 +135,12 @@ class GameEngine:
             if hole.active and hole.contains_point(pos):
                 if hole.whack():
                     self.score += 1
+                    if self.hit_sound:
+                        self.hit_sound.play()
                     return
-
         self.misses += 1
+        if self.miss_sound:
+            self.miss_sound.play()
 
     def handle_input(self):
         pass
@@ -148,11 +155,11 @@ class GameEngine:
             self.time_left_frames = 0
             self.game_over = True
             self.state = "game_over"
-
             for hole in self.holes:
                 hole.active = False
                 hole.timer = 0
-
+            if self.game_over_sound:
+                self.game_over_sound.play()
             return
 
         for hole in self.holes:
@@ -312,3 +319,58 @@ class GameEngine:
         overlay.set_alpha(220)
         overlay.fill((30, 30, 30))
         screen.blit(overlay, (0, 0))
+    
+    
+    def _make_tone(self, start_freq, duration, volume=0.3, end_freq=None):
+        if not pygame.mixer.get_init():
+            return None
+
+        sample_rate, _, _ = pygame.mixer.get_init()
+        samples = array("h")
+        total_samples = int(sample_rate * duration)
+
+        for i in range(total_samples):
+            progress = i / max(1, total_samples - 1)
+
+            if end_freq is None:
+                frequency = start_freq
+            else:
+                frequency = start_freq + (
+                    end_freq - start_freq
+                ) * progress
+
+            # Fade out to avoid an abrupt audio click.
+            envelope = min(1.0, (1.0 - progress) * 10)
+            value = int(
+                32767
+                * volume
+                * envelope
+                * math.sin(
+                    2 * math.pi * frequency * i / sample_rate
+                )
+            )
+            samples.append(value)
+
+        return pygame.mixer.Sound(buffer=samples.tobytes())
+
+
+    def _init_sounds(self):
+        self.hit_sound = None
+        self.miss_sound = None
+        self.game_over_sound = None
+
+        try:
+            if not pygame.mixer.get_init():
+                pygame.mixer.init()
+
+            self.hit_sound = self._make_tone(1000, 0.08, 0.25)
+            self.miss_sound = self._make_tone(180, 0.12, 0.2)
+            self.game_over_sound = self._make_tone(
+                700, 0.5, 0.25, end_freq=250
+            )
+        except pygame.error:
+            # Allow the game to run without audio hardware.
+            self.hit_sound = None
+            self.miss_sound = None
+            self.game_over_sound = None
+
