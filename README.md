@@ -1,3 +1,5 @@
+# PES1UG24CS294
+
 # Whack-a-Mole Game
 
 This project is a terminal-based Whack-a-Mole game using **Pygame**. It introduces students to interactive game design using object-oriented principles and real-time graphical rendering.
