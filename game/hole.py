@@ -34,3 +34,9 @@ class Hole:
             self.hit_size,
             self.hit_size,
         )
+    def contains_point(self, pos, radius=32):
+        x, y = pos
+        dx = x - self.center_x
+        dy = y - self.center_y
+
+        return dx * dx + dy * dy <= radius * radius
